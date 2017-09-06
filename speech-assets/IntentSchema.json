@@ -1,0 +1,115 @@
+{
+  "intents": [
+    {
+      "intent": "CheckHemogloginIntent",
+      "slots": [
+        {
+          "name": "Level",
+          "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "PatientAge",
+          "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "PatientType",
+          "type": "LIST_OF_PATIENT_TYPES"
+        },
+        {
+          "name": "PatientSubType",
+          "type": "LIST_OF_PATIENT_SUB_TYPES"
+        },
+        {
+          "name": "ResponseValueType",
+          "type": "LIST_OF_RESPONSE_VALUE_TYPES"
+        }
+      ]
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    }
+  ],
+  "types": [
+    {
+      "name": "LIST_OF_PATIENT_TYPES",
+      "values": [
+        {
+          "name": {
+            "value": "newborn"
+          }
+        },
+        {
+          "name": {
+            "value": "infant"
+          }
+        },
+        {
+          "name": {
+            "value": "child"
+          }
+        },
+        {
+          "name": {
+            "value": "teenager"
+          }
+        },
+        {
+          "name": {
+            "value": "adult"
+          }
+        },
+        {
+          "name": {
+            "value": "men"
+          }
+        },
+        {
+          "name": {
+            "value": "women"
+          }
+        }
+      ]
+    },
+    {
+      "name": "LIST_OF_PATIENT_SUB_TYPES",
+      "values": [
+        {
+          "name": {
+            "value": "pregnant"
+          }
+        },
+        {
+          "name": {
+            "value": "adult"
+          }
+        }
+      ]
+    },
+    {
+      "name": "LIST_OF_RESPONSE_VALUE_TYPES",
+      "values": [
+        {
+          "name": {
+            "value": "lower limit"
+          }
+        },
+        {
+          "name": {
+            "value": "upper limit"
+          }
+        },
+        {
+          "name": {
+            "value": "range"
+          }
+        }
+      ]
+    }
+  ]
+}

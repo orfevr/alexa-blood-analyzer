@@ -1,0 +1,12 @@
+CheckHemogloginIntent what is the {ResponseValueType} of hemoglobin in {PatientSubType} {PatientType}
+CheckHemogloginIntent what is the {ResponseValueType} of hemoglobin for {PatientType}
+CheckHemogloginIntent what is the {ResponseValueType} of hemoglobin for {PatientAge} years old {PatientType}
+CheckHemogloginIntent what is the {ResponseValueType} of hemoglobin
+
+
+CheckHemogloginIntent what is the lower limit of hemoglobin in pregnant women
+CheckHemogloginIntent what is the upper limit of hemoglobin in pregnant women
+CheckHemogloginIntent what is the lower limit of hemoglobin in adult men
+CheckHemogloginIntent what is the range of hemoglobin for adult
+CheckHemogloginIntent what is the range of hemoglobin for adult men
+CheckHemogloginIntent what is the range of hemoglobin for 4 years old kid

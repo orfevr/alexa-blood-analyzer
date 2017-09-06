@@ -1,0 +1,4 @@
+CheckHemogloginIntent what is the {ResponseValueType} of hemoglobin in {PatientSubType} {PatientType}
+CheckHemogloginIntent what is the {ResponseValueType} of hemoglobin for {PatientType}
+CheckHemogloginIntent what is the {ResponseValueType} of hemoglobin for {PatientAge} years old {PatientType}
+CheckHemogloginIntent what is the {ResponseValueType} of hemoglobin

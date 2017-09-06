@@ -1,0 +1,10 @@
+{
+  "name": "alexa-blood-analyzer",
+  "version": "0.0.1",
+  "description": "Amazon Alexa skill for  blood test results",
+  "author": "Dmitry T",
+  "main": "index.js",
+  "dependencies": {
+    "alexa-sdk": "^1.0.13"
+  }
+}
