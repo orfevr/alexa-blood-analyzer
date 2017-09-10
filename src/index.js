@@ -6,42 +6,16 @@ const languageStrings = {
     'en-US': {
         'translation': {
             'SKILL_NAME': 'Blood Analyzer',
-            LAUNCH_MESSAGE: 'Welcome to Blood Analyzer. I know what all this metrics mean. Ask me something.',
-            'HELP_MESSAGE': 'Help message is not defined yet.',
+            'LAUNCH_MESSAGE': 'Welcome to Blood Analyzer. I know what all this metrics mean. Ask me something.',
+            'HELP_MESSAGE': 'For example, ask What is the lower limit of hemoglobin for adult',
             'STOP_MESSAGE': 'Would you like to stop?',
-            'CANCEL_MESSAGE': 'Ok, let\'s play again soon.',
-            'HELP_UNHANDLED': 'Say yes to continue, or no to end.'
+            'CANCEL_MESSAGE': 'Ok, let\'s interact again soon.',
+            'HELP_UNHANDLED': 'For example, ask What is the lower limit of hemoglobin for adult',
+            'HEMOGLOBIN_LIMIT_MESSAGE': 'The %s is %s gram per litre for %s of this age.',
+            'HEMOGLOBIN_RANGE_MESSAGE': 'The normal level is between %s and %s gram per litre for %s of this age.',
+            'HEMOGLOBIN_ERROR_MESSAGE': 'Please refine your question. '
         }
     }
-};
-
-function getPatientAgeSlotValue(intent) {
-    return (intent && intent.slots && intent.slots.PatientAge && intent.slots.PatientAge.value && !isNaN(parseInt(intent.slots.PatientAge.value, 10))) ?
-        parseInt(intent.slots.PatientAge.value, 10) : 0;
-}
-
-function getHemoglobinLevelSlotValue(intent) {
-    return (intent && intent.slots && intent.slots.Level && intent.slots.Level.value && !isNaN(parseInt(intent.slots.Level.value, 10))) ?
-        parseInt(intent.slots.Level.value, 10) : 0;
-}
-
-function getPatientTypeSlotValue(intent) {
-    return (intent && intent.slots && intent.slots.PatientType && intent.slots.PatientType.value) ?
-        intent.slots.PatientType.value : '';
-}
-
-function getPatientSubTypeSlotValue(intent) {
-    return (intent && intent.slots && intent.slots.PatientSubType && intent.slots.PatientSubType.value) ?
-        intent.slots.PatientSubType.value : '';
-}
-
-function getResponseValueTypeSlotValue(intent) {
-    return (intent && intent.slots && intent.slots.ResponseValueType && intent.slots.ResponseValueType.value) ?
-        intent.slots.ResponseValueType.value : '';
-}
-
-function removeSSML(s) {
-    return s.replace(/<\/?[^>]+(>|$)/g, "");
 };
 
 const bloodAnalyzerHandlers = {
@@ -49,16 +23,31 @@ const bloodAnalyzerHandlers = {
 
         const patientAge = getPatientAgeSlotValue(this.event.request.intent);
         const hemoglobinLevel = getHemoglobinLevelSlotValue(this.event.request.intent);
-        const patientType = getPatientTypeSlotValue(this.event.request.intent);
+        const patientType = getPatientTypeSlotValue(this.event.request.intent, 'adult');
         const patientSubType = getPatientSubTypeSlotValue(this.event.request.intent);
         const responseValueType = getResponseValueTypeSlotValue(this.event.request.intent);
 
-        let speechOutput = '';
-        if (patientType) {
-            speechOutput += 'The ' + responseValueType + ' is 130 for ' + patientType;
+        const sex = getPatientSex(patientType, patientSubType);
+        const ageByPatientType = tryGetAgeByPatientType(patientType);
+        const res = getHemoglobinRange((patientAge > 0) ? patientAge : ageByPatientType, sex);
+
+        let speechOutput;
+        if (!res.error) {
+            let rangeForOutput;
+            if (res.length > 1) {
+                //both male and female returned - no sex provided/determined.
+                rangeForOutput = {
+                    minValue: res[0].minValue < res[1].minValue ? res[0].minValue : res[1].minValue,
+                    maxValue: res[0].maxValue > res[1].maxValue ? res[0].maxValue : res[1].maxValue
+                }
+            }
+            else {
+                rangeForOutput = res[0];
+            }
+            speechOutput = getResponseMessageForRange.call(this, responseValueType, rangeForOutput, patientType);
         }
         else {
-            speechOutput += 'The normal level is between 120 and 150 for average person';
+            speechOutput = this.t('HEMOGLOBIN_ERROR_MESSAGE');
         }
 
         this.response.cardRenderer(this.t('SKILL_NAME', removeSSML(speechOutput)));
@@ -96,3 +85,240 @@ exports.handler = (event, context) => {
     alexa.registerHandlers(bloodAnalyzerHandlers, amazonStateHandlers);
     alexa.execute();
 };
+
+function removeSSML(s) {
+    return s.replace(/<\/?[^>]+(>|$)/g, "");
+};
+
+function getResponseMessageForRange(responseValueType, range, patientType) {
+
+    switch (responseValueType) {
+        case 'upper limit':
+            return this.t('HEMOGLOBIN_LIMIT_MESSAGE', 'upper limit', range.maxValue.toString(), patientType);
+        case 'lower limit':
+        case 'limit':
+            return this.t('HEMOGLOBIN_LIMIT_MESSAGE', 'lower limit', range.minValue.toString(), patientType);
+        default:
+            return this.t('HEMOGLOBIN_RANGE_MESSAGE', range.minValue.toString(), range.maxValue.toString(), patientType);
+    }
+}
+
+function getPatientAgeSlotValue(intent) {
+    return (intent && intent.slots && intent.slots.PatientAge && intent.slots.PatientAge.value && !isNaN(parseInt(intent.slots.PatientAge.value, 10))) ?
+        parseInt(intent.slots.PatientAge.value, 10) : 0;
+}
+
+function getHemoglobinLevelSlotValue(intent) {
+    return (intent && intent.slots && intent.slots.Level && intent.slots.Level.value && !isNaN(parseInt(intent.slots.Level.value, 10))) ?
+        parseInt(intent.slots.Level.value, 10) : 0;
+}
+
+function getPatientTypeSlotValue(intent, defaultValue = '') {
+    return (intent && intent.slots && intent.slots.PatientType && intent.slots.PatientType.value) ?
+        intent.slots.PatientType.value : defaultValue;
+}
+
+function getPatientSubTypeSlotValue(intent) {
+    return (intent && intent.slots && intent.slots.PatientSubType && intent.slots.PatientSubType.value) ?
+        intent.slots.PatientSubType.value : '';
+}
+
+function getResponseValueTypeSlotValue(intent) {
+    return (intent && intent.slots && intent.slots.ResponseValueType && intent.slots.ResponseValueType.value) ?
+        intent.slots.ResponseValueType.value : 'range';
+}
+
+
+function getPatientSex(patientType, patientSubType) {
+    if (patientSubType.toLowerCase() === 'pregnant') {
+        return 'female';
+    }
+    return patientType.toLowerCase() === 'men' ? 'male' : patientType.toLowerCase() === 'women' ? 'female' : 'all';
+}
+
+function tryGetAgeByPatientType(patientType) {
+    if (!patientType) {
+        return 0;
+    }
+
+    var ages = [
+        {
+            patientType: 'newborn',
+            ageExample: 0.1
+        },
+        {
+            patientType: 'infant',
+            ageExample: 1
+        },
+        {
+            patientType: 'child',
+            ageExample: 3
+        },
+        {
+            patientType: 'teenager',
+            ageExample: 14
+        },
+        {
+            patientType: 'adult',
+            ageExample: 35
+        },
+        {
+            patientType: 'men',
+            ageExample: 35
+        },
+        {
+            patientType: 'women',
+            ageExample: 35
+        }
+    ];
+
+    var patientTypeMatch = ages.find((age) => {
+        return age.patientType === patientType;
+    });
+
+    return patientTypeMatch ? patientTypeMatch.ageExample : 0;
+}
+
+function getHemoglobinRange(age, sex) {
+
+    const db = [
+        {
+            ageMin: 1,
+            ageMax: 5,
+            ranges: [
+                {
+                    sex: ['all'],
+                    minValue: 100,
+                    maxValue: 140
+                }
+            ]
+        },
+        {
+            ageMin: 5,
+            ageMax: 10,
+            ranges: [
+                {
+                    sex: ['all'],
+                    minValue: 115,
+                    maxValue: 145
+                }
+            ]
+        },
+        {
+            ageMin: 10,
+            ageMax: 12,
+            ranges: [
+                {
+                    sex: ['all'],
+                    minValue: 120,
+                    maxValue: 150
+                }
+            ]
+        },
+        {
+            ageMin: 12,
+            ageMax: 15,
+            ranges: [
+                {
+                    sex: ['female'],
+                    minValue: 115,
+                    maxValue: 150
+                },
+                {
+                    sex: ['male'],
+                    minValue: 120,
+                    maxValue: 160
+                }
+            ]
+        },
+        {
+            ageMin: 15,
+            ageMax: 18,
+            ranges: [
+                {
+                    sex: ['female'],
+                    minValue: 117,
+                    maxValue: 153
+                },
+                {
+                    sex: ['male'],
+                    minValue: 117,
+                    maxValue: 166
+                }
+            ]
+
+        },
+        {
+            ageMin: 18,
+            ageMax: 45,
+            ranges: [
+                {
+                    sex: ['female'],
+                    minValue: 117,
+                    maxValue: 155
+                },
+                {
+                    sex: ['male'],
+                    minValue: 132,
+                    maxValue: 173
+                }
+            ]
+
+        },
+        {
+            ageMin: 45,
+            ageMax: 65,
+            ranges: [
+                {
+                    sex: ['female'],
+                    minValue: 117,
+                    maxValue: 160
+                },
+                {
+                    sex: ['male'],
+                    minValue: 131,
+                    maxValue: 172
+                }
+            ]
+
+        },
+        {
+            ageMin: 65,
+            ageMax: 150,
+            ranges: [
+                {
+                    sex: ['female'],
+                    minValue: 120,
+                    maxValue: 161
+                },
+                {
+                    sex: ['male'],
+                    minValue: 126,
+                    maxValue: 174
+                }
+            ]
+        }
+    ];
+
+    let rangesForAge = db.find((range) => {
+        return age >= range.ageMin && age < range.ageMax;
+    });
+
+    if (rangesForAge && rangesForAge.ranges) {
+        return rangesForAge.ranges
+            .filter((range) => {
+                if (!sex || sex === 'all') {
+                    return true;
+                }
+                else {
+                    return range.sex && (range.sex.includes(sex) || range.sex.includes("all"));
+                }
+            });
+    }
+    else {
+        return {
+            error: true,
+            message: 'Incorrect age'
+        };
+    }
+}

@@ -61,4 +61,4 @@ typings/
 .idea
 
 #AWS lambda archive
-/src/Archive.zip
+/src/*.zip
